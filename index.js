@@ -4,7 +4,7 @@ function requestChatBot(loc) {
     const params = new URLSearchParams(location.search);
     const oReq = new XMLHttpRequest();
     oReq.addEventListener("load", initBotConversation);
-    var path = "/chatBot?locale=" + extractLocale(params.get('locale'));
+    var path = "/api/chatBot?locale=" + extractLocale(params.get('locale'));
 
     if (loc) {
         path += "&lat=" + loc.lat + "&long=" + loc.long;
