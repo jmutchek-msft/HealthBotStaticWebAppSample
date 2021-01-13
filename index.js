@@ -32,13 +32,21 @@ function extractLocale(localeParam) {
 }
 
 function chatRequested() {
-    const params = new URLSearchParams(location.search);
-    if (params.has('shareLocation')) {
-        getUserLocation(requestChatBot);
-    }
-    else {
-        requestChatBot();
-    }
+    const res = await fetch('/api/token', { method: 'POST' });
+    const { token } = await res.json();
+
+    window.WebChat.renderWebChat(
+      {
+        directLine: window.WebChat.createDirectLine({ token }),
+        userID: 'WebChat_UserId',
+        locale: 'en-US',
+        username: 'Web Chat User',
+        locale: 'en-US',
+        // Passing 'styleSet' when rendering Web Chat
+        styleSet
+      },
+      document.getElementById('webchat')
+    );
 }
 
 function getUserLocation(callback) {
