@@ -1,6 +1,6 @@
 # Health Bot Static Web App
 
-A simple web page that allows users to communicate with the [Microsoft Healthcare Bot service](https://www.microsoft.com/en-us/research/project/health-bot/) through the WebChat channel. To simplify the deployment, [Azure Static Web Apps](https://docs.microsoft.com/en-us/azure/static-web-apps/overview) are used to host both the web page and the required serverless backend.
+A simple web page that allows users to communicate with the [Microsoft Healthcare Bot service](https://www.microsoft.com/en-us/research/project/health-bot/) through the WebChat channel. To simplify the deployment, [Azure Static Web Apps](https://docs.microsoft.com/en-us/azure/static-web-apps/overview) are used to host both the web page and the required serverless backend. To keep secrets hidden, [this pattern](https://docs.microsoft.com/en-us/previous-versions/azure/bot-service/bot-service-channel-connect-webchat?view=azure-bot-service-3.0#keep-your-secret-hidden-exchange-your-secret-for-a-token-and-generate-the-embed) described in the Azure Health Bot documentation is used.
 
 ## Getting Started
 
