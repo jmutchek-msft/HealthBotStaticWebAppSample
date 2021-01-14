@@ -12,22 +12,21 @@ module.exports = async function (context, req) {
 
     var response = {};
     response['userId'] = userid;
-    response['userName'] = "Web Chat User";
+    response['userName'] = req.query.userName;
     response['locale'] = req.query.locale;
-    response['connectorToken'] = '';
+    
+    // as an alternative to having the web client call an api/token endpoint to retrieve a token,
+    // that call could be made here and the token returned in one signed package
+    // 
+    // response['authenticationToken'] = '';
+    // 
 
-    /*
-    //Add any additional attributes
-    response['optionalAttributes'] = {age: 33};
-    */
+    // add any additional attributes here
+    // 
+    // response['optionalAttributes'] = {age: 33};
+    // 
 
-    if (req.query.lat && req.query.long)  {
-        response['location'] = {lat: req.query.lat, long: req.query.long};
-    }
-
-    // response['directLineURI'] = DIRECTLINE_ENDPOINT_URI;
     const jwtToken = jwt.sign(response, process.env["APP_SECRET"]);
-    // res.send(jwtToken);
 
     context.res = {
         // status: 200, /* Defaults to 200 */

@@ -1,14 +1,17 @@
 const defaultLocale = 'en-US';
 
-function requestChatBot(loc) {
+// main function called from UI that initiates the request for a chatbot connection
+// - calls the chatBot API (query params optional) to retrieve connection details from server
+//      - locale
+//      - userName
+//      - userId
+// - rationale is that the server will have authoritative info and might do additional authZ
+function requestChatBot() {
     const params = new URLSearchParams(location.search);
     const oReq = new XMLHttpRequest();
     oReq.addEventListener("load", initBotConversation);
     var path = "/api/chatBot?locale=" + extractLocale(params.get('locale'));
 
-    if (loc) {
-        path += "&lat=" + loc.lat + "&long=" + loc.long;
-    }
     if (params.has('userId')) {
         path += "&userId=" + params.get('userId');
     }
@@ -18,6 +21,72 @@ function requestChatBot(loc) {
     oReq.open("POST", path);
     oReq.send();
 }
+
+// callback function triggered by requestChatBot()
+// initiates chatbot connection
+async function initBotConversation() {
+    if (this.status >= 400) {
+        alert(this.statusText);
+        return;
+    }
+
+    // extract the data from the JWT
+    // currently, this returns the userId, userName, and locale but could also be enhanced 
+    // to include the bot authentication token as well
+    const jsonWebToken = this.response;
+    const tokenPayload = JSON.parse(atob(jsonWebToken.split('.')[1]));
+    const user = {
+        id: tokenPayload.userId,
+        name: tokenPayload.userName,
+        locale: tokenPayload.locale
+    };
+
+    console.log(`user info returned from /api/chatBot:`)
+    console.log(user)
+
+    // retrieve a token from the server process
+    // making this request keeps the bot SECRET out of the client web page
+    // alternatively, the previous call to /api/chatBot could return the token in tokenPayload
+    const res = await fetch('/api/token', 
+        { 
+            method: 'POST',
+            headers: {
+                'content-type': "application/json"
+            },
+            body: {
+                "user": {
+                    "id": user.id,
+                    "name": user.name
+                }
+            }
+        }
+        );
+    const { token } = await res.json();
+
+    var botConnection = window.WebChat.createDirectLine({ token });
+    const styleOptions = {
+        botAvatarImage: 'https://docs.microsoft.com/en-us/azure/bot-service/v4sdk/media/logo_bot.svg?view=azure-bot-service-4.0',
+        hideSendBox: false, /* set to true to hide the send box from the view */
+        botAvatarInitials: 'Bot',
+        userAvatarInitials: 'You',
+        backgroundColor: '#F8F8F8'
+    };
+
+    const webchatOptions = {
+        directLine: botConnection,
+        styleOptions: styleOptions,
+        locale: user.locale
+    };
+
+    startChat(user, webchatOptions);
+}
+
+function startChat(user, webchatOptions) {
+    const botContainer = document.getElementById('webchat');
+    window.WebChat.renderWebChat(webchatOptions, botContainer);
+}
+
+
 
 function extractLocale(localeParam) {
     if (!localeParam) {
@@ -31,128 +100,3 @@ function extractLocale(localeParam) {
     }
 }
 
-function chatRequested() {
-    const res = await fetch('/api/token', { method: 'POST' });
-    const { token } = await res.json();
-
-    window.WebChat.renderWebChat(
-      {
-        directLine: window.WebChat.createDirectLine({ token }),
-        userID: 'WebChat_UserId',
-        locale: 'en-US',
-        username: 'Web Chat User',
-        locale: 'en-US',
-        // Passing 'styleSet' when rendering Web Chat
-        styleSet
-      },
-      document.getElementById('webchat')
-    );
-}
-
-function getUserLocation(callback) {
-    navigator.geolocation.getCurrentPosition(
-        function(position) {
-            var latitude  = position.coords.latitude;
-            var longitude = position.coords.longitude;
-            var location = {
-                lat: latitude,
-                long: longitude
-            }
-            callback(location);
-        },
-        function(error) {
-            // user declined to share location
-            console.log("location error:" + error.message);
-            callback();
-        });
-}
-
-function initBotConversation() {
-    if (this.status >= 400) {
-        alert(this.statusText);
-        return;
-    }
-    // extract the data from the JWT
-    const jsonWebToken = this.response;
-    const tokenPayload = JSON.parse(atob(jsonWebToken.split('.')[1]));
-    const user = {
-        id: tokenPayload.userId,
-        name: tokenPayload.userName,
-        locale: tokenPayload.locale
-    };
-    let domain = undefined;
-    if (tokenPayload.directLineURI) {
-        domain =  "https://" +  tokenPayload.directLineURI + "/v3/directline";
-    }
-    var botConnection = window.WebChat.createDirectLine({
-        token: tokenPayload.connectorToken,
-        domain: domain
-    });
-    const styleOptions = {
-        botAvatarImage: 'https://docs.microsoft.com/en-us/azure/bot-service/v4sdk/media/logo_bot.svg?view=azure-bot-service-4.0',
-        // botAvatarInitials: '',
-        // userAvatarImage: '',
-        hideSendBox: false, /* set to true to hide the send box from the view */
-        botAvatarInitials: 'Bot',
-        userAvatarInitials: 'You',
-        backgroundColor: '#F8F8F8'
-    };
-
-    const store = window.WebChat.createStore({}, function(store) { return function(next) { return function(action) {
-        if (action.type === 'DIRECT_LINE/CONNECT_FULFILLED') {
-            store.dispatch({
-                type: 'DIRECT_LINE/POST_ACTIVITY',
-                meta: {method: 'keyboard'},
-                payload: {
-                    activity: {
-                        type: "invoke",
-                        name: "InitConversation",
-                        locale: user.locale,
-                        value: {
-                            // must use for authenticated conversation.
-                            jsonWebToken: jsonWebToken,
-
-                            // Use the following activity to proactively invoke a bot scenario
-                            /*
-                            triggeredScenario: {
-                                trigger: "{scenario_id}",
-                                args: {
-                                    myVar1: "{custom_arg_1}",
-                                    myVar2: "{custom_arg_2}"
-                                }
-                            }
-                            */
-                        }
-                    }
-                }
-            });
-
-        }
-        else if (action.type === 'DIRECT_LINE/INCOMING_ACTIVITY') {
-            if (action.payload && action.payload.activity && action.payload.activity.type === "event" && action.payload.activity.name === "ShareLocationEvent") {
-                // share
-                getUserLocation(function (location) {
-                    store.dispatch({
-                        type: 'WEB_CHAT/SEND_POST_BACK',
-                        payload: { value: JSON.stringify(location) }
-                    });
-                });
-            }
-        }
-        return next(action);
-    }}});
-    const webchatOptions = {
-        directLine: botConnection,
-        styleOptions: styleOptions,
-        store: store,
-        userID: user.id,
-        username: user.name,
-        locale: user.locale
-    };
-    startChat(user, webchatOptions);
-}
-
-function startChat(user, webchatOptions) {
-    const botContainer = document.getElementById('webchat');
-    window.WebChat.renderWebChat(webchatOptions, botContainer);
-}
