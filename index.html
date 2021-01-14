@@ -18,7 +18,7 @@
     </script>
     -->
     <script src="https://cdn.botframework.com/botframework-webchat/latest/webchat-es5.js"></script>
-    <script src="index.js"></script>
+    <!-- <script src="index.js"></script> -->
     <link href="stylesheets/style.css" rel="stylesheet" />
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 </head>
@@ -36,9 +36,9 @@ async function startChat(){
         bubbleFromUserBackground: 'rgba(0, 255, 0, .1)',
 
         botAvatarImage: '<your bot avatar URL>',
-        botAvatarInitials: 'BF',
+        botAvatarInitials: 'Bot',
         userAvatarImage: '<your user avatar URL>',
-        userAvatarInitials: 'WC',
+        userAvatarInitials: 'Me',
         rootHeight: '100%',
         rootWidth: '100%'
      });
@@ -46,7 +46,7 @@ async function startChat(){
      // After generated, you can modify the CSS rules
      styleSet.textContent = {
         ...styleSet.textContent,
-        fontFamily: "'Comic Sans MS', 'Arial', sans-serif",
+        fontFamily: "'Calibri', 'Arial', sans-serif",
         fontWeight: 'bold'
      };
 
@@ -57,7 +57,6 @@ async function startChat(){
        {
          directLine: window.WebChat.createDirectLine({ token }),
          userID: 'WebChat_UserId',
-         locale: 'en-US',
          username: 'Web Chat User',
          locale: 'en-US',
          // Passing 'styleSet' when rendering Web Chat
